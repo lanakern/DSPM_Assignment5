@@ -31,11 +31,13 @@ rm(list = ls())
 if (!require("httr")) install.packages("httr")  
 if (!require("jsonlite")) install.packages("jsonlite") 
 if (!require("dplyr")) install.packages("dplyr") 
+if (!require("ggplot2")) install.packages("ggplot2") 
 
 # Load packages
 library(httr)  # for implementing the HTTP methods like GET() in R
 library(jsonlite)  # for converting JSON object in R object using fromJSON()
 library(dplyr)  # for data manipulation functions
+library(ggplot2)  # to create the map
 ```
 
 
@@ -303,6 +305,56 @@ str(df_venues_final)
 \
 
 ## Exercise 5: Visualizing the extracted data
+
+A map of Germany that indicates the locations of the event venues across Germany is created. To do so, I first change the data type of the `longitude` and `latitude` variables to numeric. 
+
+```{r ex5_coord_numeric}
+# change data type of longitude and latitude variable to numeric
+df_venues_final$longitude <- as.numeric(df_venues_final$longitude)
+df_venues_final$latitude <- as.numeric(df_venues_final$latitude)
+```
+
+Secondly, I set coordinate values to `NA` that lie way beyond the German borders. The coordinate ranges have been derived from the extreme points of Germany as listed on Wikipedia.
+
+```{r ex5_coord_NA}
+# set coordinates outside the given range to NA
+# do this for latitude
+df_venues_final$latitude <- ifelse(
+  # if lat values are between min and max of map data...
+  between(df_venues_final$latitude, 
+          47.271679,  # min lat of map data
+          55.0846), # max lat of map data
+  # ... then keep lat ...
+  df_venues_final$latitude, 
+  # ... else set it missing
+  NA)
+
+# do this for longitude
+df_venues_final$longitude <- ifelse(
+  # if lat values are between min and max of map data...
+  between(df_venues_final$long, 
+          5.866944,  # min long of map data
+          15.043611), # max long of map data
+  # ... then keep long ...
+  df_venues_final$longitude, 
+  # ... else set it missing
+  NA)
+```
+
+Lastly, I create the map:
+
+```{r ex5_map}
+plot <- ggplot(data = df_venues_final, mapping = aes(x = longitude, y = latitude))  +
+  geom_polygon(
+    aes(x = long, y = lat, group = group), data = map_data("world", region = "Germany"),
+    fill = "grey90",color = "black") +
+  theme_void() + coord_quickmap() +
+  labs(title = "Event locations across Germany", caption = "Source: ticketmaster.com") +
+  theme(title = element_text(size = 8, face = 'bold'),
+        plot.caption = element_text(face = "italic"))
+
+plot + geom_point(alpha = 0.2)
+```
 
 \
 
