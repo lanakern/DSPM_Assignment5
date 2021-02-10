@@ -65,7 +65,6 @@ The most important features and functionalities of the Ticketmaster *Discovery A
 
 * The rate limit is 5000 API calls per day and 5 requests per second.
 
-* The API only supports retrieving the 1000th item, i.e. size * page < 1000
 
 
 \
@@ -133,6 +132,30 @@ str(df_venues)
 \
 
 ## Exercise 4: Interacting with the API - advanced
+
+I take a closer look at the list element named `page` and recognize that my `GET()` request from Exercise 3 did not return *all* event locations in Germany. More precisely, it only returned the first 20 venues. In the following, I find out how many venues in Germany exist at all and on how many pages they are contained.
+
+```{r ex4_page_result}
+# how many results did my GET request yield?
+result_per_page <- as.numeric(content_venues_ger$page$size)  # 20
+result_per_page
+
+# how many results are there in total?
+n <- as.numeric(content_venues_ger$page$totalElements)  # 12238
+n
+
+# on how many pages are they?
+pages <- as.numeric(content_venues_ger$page$totalPages)  # 612
+pages
+
+# on how many full pages? 
+full_pages <- as.numeric(floor(n/result_per_page))  # 611
+full_pages
+
+# how many venues are on last page (page 612)?
+results_last_page <- n - (full_pages * result_per_page)  # 18
+results_last_page
+```
 
 \
 
