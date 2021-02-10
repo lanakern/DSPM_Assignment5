@@ -1,0 +1,14 @@
+---
+title: 'Assignment V: GitHub and the ticketmaster.com API'
+subtitle: 'Data Science Project Management | Winter Term 2020 / 2021' 
+author: 'Submitted by Lana Kern (Student ID: 5395819)'
+date: 'February 16, 2021'
+output: 
+  html_document:
+  toc: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
