@@ -144,21 +144,21 @@ result_per_page
 n <- as.numeric(content_venues_ger$page$totalElements)  # 12238
 n
 
-# on how many pages are they?
-pages <- as.numeric(content_venues_ger$page$totalPages)  # 612
-pages
+# because the location element is missing in some requests, I figured out
+# that adjusting the size parameter in the GET() request solves this problem.
+size_200 <- 200
 
-# on how many full pages? 
-full_pages <- as.numeric(floor(n/result_per_page))  # 611
+# on how many full pages are the venues if on one page are 200 results
+full_pages <- as.numeric(floor(n/size_200))  # 61
 full_pages
 
-# how many venues are on last page (page 612)?
-results_last_page <- n - (full_pages * result_per_page)  # 18
+# how many venues are on last page (page 62)?
+results_last_page <- n - (full_pages * size_200)  # 38
 results_last_page
 
 # create empty data frame with right dimensions which is filled during loop 
 # number of rows are the results per page times the number of full pages
-n_rows <- result_per_page * full_pages
+n_rows <- size_200 * full_pages
 
 df_venues_all <- data.frame(
   "name" = character(n_rows), 
@@ -183,7 +183,8 @@ for (i in 0:loop_pages) {
           countryCode = "DE",  # set countryCode as Germany
           apikey = api_key,    # provide secret API key to successfully call API
           page = i,            # page number
-          locale = "*"         # use * to match all locales
+          locale = "*",        # use * to match all locales
+          size = size_200      # adjust results per page
         )
     )
   
@@ -223,13 +224,14 @@ for (i in 0:loop_pages) {
   j <- i + 1
   
   # calculate index to fill empty data frame
-  index <- ((j - 1) * 20 + 1):(20 * j)
+  index <- ((j - 1) * size_200 + 1):(size_200 * j)
   
   # append data frame of each page to full data frame
   df_venues_all[index, ] <- df_venues_pagei
   
   # respect rate limit: 5 requests per second
-  # with Sys.sleep(0.2) and Sys.sleep(0.25), I got an error message
+  # with Sys.sleep(0.2) and Sys.sleep(0.25), I got a HTTP status code of 429
+  # meaning that I made too many requests.
   Sys.sleep(0.5)
   
 }
