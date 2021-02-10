@@ -83,12 +83,10 @@ The following packages are needed to interact with the APIs using R and already 
 Next, a first `GET()` request is performed, that searches for event venues in Germany. The following URL is constructed by using the information from Exercise 2, the venue search of the ticketmaster API explorer (*https://developer.ticketmaster.com/api-explorer/v2/*) and the documentation of the venue search (*https://developer.ticketmaster.com/products-and-docs/apis/discovery-api/v2/#search-venues-v2*). 
 
 ```{r ex3_first_GET_request}
-# load API key into R
-source("api_key_ticketmaster.R")
-
-# In case your API key is stored under another name, please change it here,
-# because it is used more often in the document
-
+# load API key into R and store it in R under the name api_key
+# if your structure of your api file is different, please store it here under my
+# name "api_key". It is often used in the code. 
+api_key <- source("api_key_ticketmaster.R")[[1]]
 
 # perform GET request
 resp_venues_ger <-
@@ -348,7 +346,7 @@ df_venues_final$longitude <- ifelse(
 Lastly, I create the map:
 
 ```{r ex5_map}
-plot <- ggplot(data = df_venues_final, mapping = aes(x = longitude, y = latitude)) +
+ggplot(data = df_venues_final, mapping = aes(x = longitude, y = latitude)) +
   # plot country map
   geom_polygon(
     aes(x = long, y = lat, group = group), data = map_data("world", region = "Germany"),
