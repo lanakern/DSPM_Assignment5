@@ -110,6 +110,26 @@ content_venues_ger <- fromJSON(content_venues_ger_json)
 The list element `content_venues_ger` consists of three elements: `_embedded`, `_links` and `page`. The list element `_embedded` contains a data frame called `venues` which contains the variables we are interested in. More precisely, the data frame `venues` contains 20 observations of 19 variables. 
 Of particular interest for this assignment is also the page element which contains information about the number of entries per page (stored in `size`), the number of total venues (stored in `totalElements`), the number of total Pages (stored in `totalPages`) and the current page number (stored in `number`). 
 
+Lastly, the `name`, the `city`, the `postalCode` and `address`, as well as the `url` and the `longitude` and `latitude` of the venues from the `venues` part in the list element `_embedded` is extracted to a data frame. 
+
+```{r ex3_dataframe}
+# the relevant information is stored in the venues part of the list element "_embedded"
+# i extract the information I need and create a data frame
+df_venues <- data.frame(
+  "name" = content_venues_ger$`_embedded`$venues$name, 
+  "city" = content_venues_ger$`_embedded`$venues$city$name, 
+  "postalCode" = content_venues_ger$`_embedded`$venues$postalCode, 
+  "address" = content_venues_ger$`_embedded`$venues$address$line1,
+  "url" = content_venues_ger$`_embedded`$venues$url,
+  "longitude" = content_venues_ger$`_embedded`$venues$location$longitude,
+  "latitude" = content_venues_ger$`_embedded`$venues$location$latitude
+)
+
+# show structure of data frame
+# structure is similar to the structure of the task sheet
+str(df_venues)
+```
+
 \
 
 ## Exercise 4: Interacting with the API - advanced
