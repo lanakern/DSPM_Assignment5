@@ -44,6 +44,22 @@ The link to my personal GitHub account where the project's version history is do
 
 ## Exercise 2: Getting to know the API
 
+The most important features and functionalities of the Ticketmaster *Discovery API* for this assignment are:
+
+* The Ticketmaster Discovery API allows one to search for events, attractions, or venues in different countries. 
+
+* The root URL for the *Discover API* is: `https://app.ticketmaster.com/discovery/v2/` where `discovery` denotes the package and `v2` the version.
+
+  + To find all venues the base URL for the `GET()` request is: `https://app.ticketmaster.com/discovery/v2/venues`. 
+  
+  + This base URL can be expanded by for example specifying the country. 
+
+* To run a successful API call, one needs to pass an API key in the `apikey` query parameter. My retrieved valid API key from the API Explorer is stored in a separate script called `api_key_ticketmaster` in order to comply to the common secrecy practices. 
+
+* The rate limit is 5000 API calls per day and 5 requests per second.
+
+* The API only supports retrieving the 1000th item, i.e. size * page < 1000
+
 
 \
 
