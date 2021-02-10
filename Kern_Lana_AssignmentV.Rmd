@@ -155,6 +155,84 @@ full_pages
 # how many venues are on last page (page 612)?
 results_last_page <- n - (full_pages * result_per_page)  # 18
 results_last_page
+
+# create empty data frame with right dimensions which is filled during loop 
+# number of rows are the results per page times the number of full pages
+n_rows <- result_per_page * full_pages
+
+df_venues_all <- data.frame(
+  "name" = character(n_rows), 
+  "city" = character(n_rows), 
+  "postalCode" = character(n_rows), 
+  "address" = character(n_rows),
+  "url" = character(n_rows), 
+  "longitude" = character(n_rows),
+  "latitude" = character(n_rows)
+)
+
+# important for the loop: first page starts with 0. Thus, the number of pages
+# for the loop must be reduced by one. 
+loop_pages <- full_pages - 1 
+
+for (i in 0:loop_pages) {
+  
+  # perform GET request for each page
+  resp_venues_ger_pagei <-
+    GET(url = "https://app.ticketmaster.com/discovery/v2/venues.json?",
+        query = list(
+          countryCode = "DE",  # set countryCode as Germany
+          apikey = api_key,    # provide secret API key to successfully call API
+          page = i,            # page number
+          locale = "*"         # use * to match all locales
+        )
+    )
+  
+  
+  # extract content from response object
+  content_json_pagei <- content(resp_venues_ger_pagei, as = "text")
+  
+  # convert JSON object in R object
+  content_venues <- fromJSON(content_json_pagei)
+  
+  # create data frame for each page
+  # sometimes location element is missing 
+  # then missings for longitude  and latitude 
+  if (is.null(content_venues$`_embedded`$venues$location$longitude)) {
+    df_venues_pagei <- data.frame(
+      "name" = content_venues$`_embedded`$venues$name, 
+      "city" = content_venues$`_embedded`$venues$city$name, 
+      "postalCode" = content_venues$`_embedded`$venues$postalCode, 
+      "address" = content_venues$`_embedded`$venues$address$line1,
+      "url" = content_venues$`_embedded`$venues$url,
+      "longitude" = rep(NA, result_per_page),
+      "latitude" = rep(NA, result_per_page)
+    )
+  } else {
+    df_venues_pagei <- data.frame(
+      "name" = content_venues$`_embedded`$venues$name, 
+      "city" = content_venues$`_embedded`$venues$city$name, 
+      "postalCode" = content_venues$`_embedded`$venues$postalCode, 
+      "address" = content_venues$`_embedded`$venues$address$line1,
+      "url" = content_venues$`_embedded`$venues$url,
+      "longitude" = content_venues$`_embedded`$venues$location$longitude,
+      "latitude" = content_venues$`_embedded`$venues$location$latitude
+    )
+  }
+
+  # create index 
+  j <- i + 1
+  
+  # calculate index to fill empty data frame
+  index <- ((j - 1) * 200 + 1):(200 * j)
+  
+  # append data frame of each page to full data frame
+  df_venues_all[index, ] <- df_venues_pagei
+  
+  # respect rate limit: 5 requests per second
+  
+  Sys.sleep(0.2)
+  
+}
 ```
 
 \
