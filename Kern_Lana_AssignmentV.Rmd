@@ -61,7 +61,7 @@ The most important features and functionalities of the Ticketmaster *Discovery A
   
   + This base URL can be expanded by for example specifying the country. 
 
-* To run a successful API call, one needs to pass an API key in the `apikey` query parameter. My retrieved valid API key from the API Explorer is stored in a separate script called `api_key_ticketmaster` in order to comply to the common secrecy practices. 
+* To run a successful API call, one needs to pass an API key in the `apikey` query parameter. My retrieved valid API key from the API Explorer is stored in a separate script called `api_key_ticketmaster.R` in order to comply to the common secrecy practices. The `api_key_ticketmaster.R` is also stored in the R project, but added to the `.gitignore` file so that it is not tracked by GIT. Most importantly, it does not appear in my public GitHub repository. 
 
 * The rate limit is 5000 API calls per day and 5 requests per second.
 
@@ -79,6 +79,36 @@ The following packages are needed to interact with the APIs using R and already 
 * The `{jsonlite}` package is needed in order to convert a JSON object into a R object by using the provided function `fromJSON()`. 
 
 
+Next, a first `GET()` request is performed, that searches for event venues in Germany. The following URL is constructed by using the information from Exercise 2, the venue search of the ticketmaster API explorer (*https://developer.ticketmaster.com/api-explorer/v2/*) and the documentation of the venue search (*https://developer.ticketmaster.com/products-and-docs/apis/discovery-api/v2/#search-venues-v2*). 
+
+```{r ex3_first_GET_request}
+# load API key into R
+source("api_key_ticketmaster.R")
+
+# perform GET request
+resp_venues_ger <-
+  GET(url = "https://app.ticketmaster.com/discovery/v2/venues.json?",
+      query = list(
+        apikey = api_key,    # provide secret API key to successfully call API
+        countryCode = "DE",  # set countryCode as Germany
+        locale = "*"         # use * to match all locales
+      )
+  )
+
+# check status: if status code starts with a 2 the server received my request
+status_code(resp_venues_ger)  # = 200 -> success
+
+# extract the content from the response object using the content() function
+# I use the non-error prone way: I specify as = "text" so that the content() function
+# returns a character vector containing the JSON object...
+content_venues_ger_json <- content(resp_venues_ger, as = "text")
+
+# ... then I convert the JSON object into a R object by using the fromJSON() function
+content_venues_ger <- fromJSON(content_venues_ger_json)
+```
+
+The list element `content_venues_ger` consists of three elements: `_embedded`, `_links` and `page`. The list element `_embedded` contains a data frame called `venues` which contains the variables we are interested in. More precisely, the data frame `venues` contains 20 observations of 19 variables. 
+Of particular interest for this assignment is also the page element which contains information about the number of entries per page (stored in `size`), the number of total venues (stored in `totalElements`), the number of total Pages (stored in `totalPages`) and the current page number (stored in `number`). 
 
 \
 
