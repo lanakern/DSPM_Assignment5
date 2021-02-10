@@ -131,6 +131,8 @@ str(df_venues)
 
 \
 
+
+
 ## Exercise 4: Interacting with the API - advanced
 
 I take a closer look at the list element named `page` and recognize that my `GET()` request from Exercise 3 did not return *all* event locations in Germany. More precisely, it only returned the first 20 venues. In the following, I find out how many venues in Germany exist at all and on how many pages they are contained.
@@ -155,6 +157,10 @@ full_pages
 # how many venues are on last page (page 62)?
 results_last_page <- n - (full_pages * size_200)  # 38
 results_last_page
+
+
+# for loop for full pages
+#########################
 
 # create empty data frame with right dimensions which is filled during loop 
 # number of rows are the results per page times the number of full pages
@@ -205,8 +211,8 @@ for (i in 0:loop_pages) {
       "postalCode" = content_venues$`_embedded`$venues$postalCode, 
       "address" = content_venues$`_embedded`$venues$address$line1,
       "url" = content_venues$`_embedded`$venues$url,
-      "longitude" = rep(NA, result_per_page),
-      "latitude" = rep(NA, result_per_page)
+      "longitude" = rep(NA, size_200),
+      "latitude" = rep(NA, size_200)
     )
   } else {
     df_venues_pagei <- data.frame(
@@ -235,6 +241,63 @@ for (i in 0:loop_pages) {
   Sys.sleep(0.5)
   
 }
+
+
+# add entries from last page to data frame 
+##########################################
+
+# perform GET request for each page
+resp_venues_ger_lastpage <-
+  GET(url = "https://app.ticketmaster.com/discovery/v2/venues.json?",
+      query = list(
+        countryCode = "DE",  # set countryCode as Germany
+        apikey = api_key,    # provide secret API key to successfully call API
+        page = i + 1,        # last page number after loop with not all entries
+        locale = "*" ,       # use * to match all locales
+        size = 200           # adjust number of entries per page
+      )
+  )
+
+
+# extract content from response object
+content_json_lastpage <- content(resp_venues_ger_lastpage, as = "text")
+
+# convert JSON object in R object
+content_venues_lastpage <- fromJSON(content_json_lastpage)
+
+# create data frame for each page
+# sometimes location element is missing 
+# then missings for longitude  and latitude 
+if (is.null(content_venues_lastpage$`_embedded`$venues$location$longitude)) {
+  df_venues_lastpage <- data.frame(
+    "name" = content_venues_lastpage$`_embedded`$venues$name, 
+    "city" = content_venues_lastpage$`_embedded`$venues$city$name, 
+    "postalCode" = content_venues_lastpage$`_embedded`$venues$postalCode, 
+    "address" = content_venues_lastpage$`_embedded`$venues$address$line1,
+    "url" = content_venues_lastpage$`_embedded`$venues$url,
+    "longitude" = rep(NA, length(content_venues_lastpage$`_embedded`$venues$name)),
+    "latitude" = rep(NA, length(content_venues_lastpage$`_embedded`$venues$name))
+  )
+} else {
+  df_venues_lastpage <- data.frame(
+    "name" = content_venues$`_embedded`$venues$name, 
+    "city" = content_venues$`_embedded`$venues$city$name, 
+    "postalCode" = content_venues$`_embedded`$venues$postalCode, 
+    "address" = content_venues$`_embedded`$venues$address$line1,
+    "url" = content_venues$`_embedded`$venues$url,
+    "longitude" = content_venues$`_embedded`$venues$location$longitude,
+    "latitude" = content_venues$`_embedded`$venues$location$latitude
+  )
+}
+
+
+# add both data frames together
+###############################
+
+df_venues_final <- rbind(df_venues_all, df_venues_lastpage)
+
+# show structure of final data frame
+str(df_venues_final)
 ```
 
 \
