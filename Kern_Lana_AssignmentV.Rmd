@@ -12,3 +12,52 @@ output:
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+
+I worked together with Michael Lyubkin (Student ID: 4168485), Martin Scheerer (Student ID: 5631373), Anton Höhl (Student ID: 5637078) and Jingwen Xu (Student ID: 5631584). 
+I hereby assure that my submission is in line with the *Code of Conduct*  outlined on the lecture slides. 
+
+\
+
+## General setup
+
+Before I present the solutions, I clear my workspace as well as install (if necessary)
+and load the packages that are needed throughout the assignment.
+
+```{r general, message=FALSE}
+# clear workspace
+
+# Check if needed packages have already been installed. If not, packages are installed. 
+
+# Load packages
+```
+
+
+\
+
+## Exercise 1: Setting up a new GitHub repository
+
+The link to my personal GitHub account where the project's version history is documented is:
+`https://github.com/lanakern/DSPM_Assignment5.git`
+
+
+\
+
+## Exercise 2: Getting to know the API
+
+
+\
+
+## Exercise 3: Interacting with the API - the basics
+
+
+\
+
+## Exercise 4: Interacting with the API - advanced
+
+\
+
+## Exercise 5: Visualizing the extracted data
+
+\
+
+## Exercise 6: Event locations in other countries
