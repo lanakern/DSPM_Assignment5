@@ -86,6 +86,10 @@ Next, a first `GET()` request is performed, that searches for event venues in Ge
 # load API key into R
 source("api_key_ticketmaster.R")
 
+# In case your API key is stored under another name, please change it here,
+# because it is used more often in the document
+
+
 # perform GET request
 resp_venues_ger <-
   GET(url = "https://app.ticketmaster.com/discovery/v2/venues.json?",
@@ -344,18 +348,288 @@ df_venues_final$longitude <- ifelse(
 Lastly, I create the map:
 
 ```{r ex5_map}
-plot <- ggplot(data = df_venues_final, mapping = aes(x = longitude, y = latitude))  +
+plot <- ggplot(data = df_venues_final, mapping = aes(x = longitude, y = latitude)) +
+  # plot country map
   geom_polygon(
     aes(x = long, y = lat, group = group), data = map_data("world", region = "Germany"),
     fill = "grey90",color = "black") +
-  theme_void() + coord_quickmap() +
+  coord_quickmap() +
+  # add white background
+  theme_void() +
+  # add title and caption
   labs(title = "Event locations across Germany", caption = "Source: ticketmaster.com") +
+  # change font and font size of title and caption
   theme(title = element_text(size = 8, face = 'bold'),
-        plot.caption = element_text(face = "italic"))
-
-plot + geom_point(alpha = 0.2)
+        plot.caption = element_text(face = "italic")) +
+  # highlight venues with points
+  # adjust opacity to avoid overplotting and visualize areas with many venues
+  # darker than areas with less venues
+  geom_point(alpha = 0.2)
 ```
+
+
 
 \
 
 ## Exercise 6: Event locations in other countries
+
+To repeat the analysis for another European country, I put the code for exercise 3 to 5 into a function called `func_venues()` and the code for the map inside a function alled `func_map_venues()`. 
+This is very efficient as I can change the choice of what European country I want to use very easy.
+
+```{r function_venues_data, echo = F}
+##########################
+# function for venues data
+##########################
+
+# the function func_venues() extracts all event venues in the specified country
+# with some useful information such as the coordinates.
+# input arguments are:
+  # country: specify the country code
+  # size: specify the number of results per page (should be a high number like 200)
+  # api_key: the personal API key
+
+func_venues <- function(country, size, api_key) {
+  
+  # get data for page 0
+  #####################
+  
+  resp_venues_page0 <-
+    GET(url = "https://app.ticketmaster.com/discovery/v2/venues.json?",
+        query = list(
+          countryCode = country,  # country code as defined in function
+          apikey = api_key,       # provide secret API key to successfully call API
+          locale = "*"            # use * to match all locales
+        )
+    )
+  
+  
+  # extract content from response object
+  content_json_page0 <- content(resp_venues_page0, as = "text")
+  
+  # convert JSON object in R object
+  content_venues_page0 <- fromJSON(content_json_page0)
+  
+  # how many results are there in total?
+  n <- as.numeric(content_venues_page0$page$totalElements)  
+
+  # how many full pages do we have?
+  full_pages <- as.numeric(floor(n/size))  
+  
+  # how many venues are on last page
+  results_last_page <- n - (full_pages * size)  
+  
+  # create empty data frame with right dimensions which is filled during loop 
+  df_venues_all <- data.frame(
+    "name" = character(full_pages * size), 
+    "city" = character(full_pages * size), 
+    "postalCode" = character(full_pages * size), 
+    "address" = character(full_pages * size),
+    "url" = character(full_pages * size), 
+    "longitude" = character(full_pages * size),
+    "latitude" = character(full_pages * size)
+  )
+  
+  # note: since page starts at 0, the full_pages for the loop are one less
+  loop_pages <- full_pages - 1
+  
+  
+  # for-loop
+  ##########
+  
+  for (i in 0:loop_pages) {
+    
+    # perform GET request for each page
+    resp_venues_pagei <-
+      GET(url = "https://app.ticketmaster.com/discovery/v2/venues.json?",
+          query = list(
+            countryCode = country,  # country code as defined in function
+            apikey = api_key,       # provide secret API key to successfully call API
+            page = i,               # page number
+            locale = "*" ,          # use * to match all locales
+            size = size             # adjust number of entries per page
+          )
+      )
+    
+    
+    # extract content from response object
+    content_json_pagei <- content(resp_venues_pagei, as = "text")
+    
+    # convert JSON object in R object
+    content_venues <- fromJSON(content_json_pagei)
+    
+    # create data frame for each page
+    # sometimes location element is missing 
+    # then missings for longitude  and latitude 
+    if (is.null(content_venues$`_embedded`$venues$location$longitude)) {
+      df_venues_pagei <- data.frame(
+        "name" = content_venues$`_embedded`$venues$name, 
+        "city" = content_venues$`_embedded`$venues$city$name, 
+        "postalCode" = content_venues$`_embedded`$venues$postalCode, 
+        "address" = content_venues$`_embedded`$venues$address$line1,
+        "url" = content_venues$`_embedded`$venues$url,
+        "longitude" = rep(NA, size),
+        "latitude" = rep(NA, size)
+      )
+    } else {
+      df_venues_pagei <- data.frame(
+        "name" = content_venues$`_embedded`$venues$name, 
+        "city" = content_venues$`_embedded`$venues$city$name, 
+        "postalCode" = content_venues$`_embedded`$venues$postalCode, 
+        "address" = content_venues$`_embedded`$venues$address$line1,
+        "url" = content_venues$`_embedded`$venues$url,
+        "longitude" = content_venues$`_embedded`$venues$location$longitude,
+        "latitude" = content_venues$`_embedded`$venues$location$latitude
+      )
+    }
+    
+    
+    # create index 
+    j <- i + 1
+    
+    # calculate index to fill empty data frame
+    index <- ((j - 1) * size + 1):(size * j)
+    
+    # append data frame of each page to full data frame
+    df_venues_all[index, ] <- df_venues_pagei
+    
+    # respect rate limit: 5 requests per second
+    Sys.sleep(0.5)
+    
+  }
+  
+  
+  # add entries from last page to data frame 
+  ##########################################
+  
+  # perform GET request for each page
+  resp_venues_lastpage <-
+    GET(url = "https://app.ticketmaster.com/discovery/v2/venues.json?",
+        query = list(
+          countryCode = country,  # set countryCode according to input
+          apikey = api_key,       # provide secret API key to successfully call API
+          page = i + 1,           # last page number after loop with not all entries
+          locale = "*",           # use * to match all locales
+          size = size
+        )
+    )
+  
+  
+  # extract content from response object
+  content_json_lastpage <- content(resp_venues_lastpage, as = "text")
+  
+  # convert JSON object in R object
+  content_venues_lastpage <- fromJSON(content_json_lastpage)
+  
+  # create data frame for each page
+  # sometimes location element is missing 
+  # then missings for longitude  and latitude 
+  if (is.null(content_venues_lastpage$`_embedded`$venues$location$longitude)) {
+    df_venues_lastpage <- data.frame(
+      "name" = content_venues_lastpage$`_embedded`$venues$name, 
+      "city" = content_venues_lastpage$`_embedded`$venues$city$name, 
+      "postalCode" = content_venues_lastpage$`_embedded`$venues$postalCode, 
+      "address" = content_venues_lastpage$`_embedded`$venues$address$line1,
+      "url" = content_venues_lastpage$`_embedded`$venues$url,
+      "longitude" = rep(NA, results_last_page),
+      "latitude" = rep(NA, results_last_page)
+    )
+  } else {
+    df_venues_lastpage <- data.frame(
+      "name" = content_venues_lastpage$`_embedded`$venues$name, 
+      "city" = content_venues_lastpage$`_embedded`$venues$city$name, 
+      "postalCode" = content_venues_lastpage$`_embedded`$venues$postalCode, 
+      "address" = content_venues_lastpage$`_embedded`$venues$address$line1,
+      "url" = content_venues_lastpage$`_embedded`$venues$url,
+      "longitude" = content_venues_lastpage$`_embedded`$venues$location$longitude,
+      "latitude" = content_venues_lastpage$`_embedded`$venues$location$latitude
+    )
+  }
+  
+  
+  # append result to full data frame
+  ##################################
+  
+  df_venues_final <- rbind(df_venues_all, df_venues_lastpage)
+  
+  # change data type of longitude and latitude as numeric
+  #######################################################
+  
+  df_venues_final[, c("longitude", "latitude")] <- apply(df_venues_final[, c("longitude", "latitude")],
+                                                         MARGIN = 2,
+                                                         as.numeric)
+  # return final data frame as function output
+  ############################################
+  
+  return(df_venues_final)
+}
+
+
+
+####################################
+# function for map with event venues
+####################################
+
+# this function produces a map which highlights the event venues in the
+# specified country. The input arguments are:
+  # data: data with coordinates (longitude and latitude) of the event venues
+  # country: full name of country from which the coordinates are, e.g. "Germany"
+  # lat_min: minimal latitude derived from wikipedia "southernmost point"
+  # lat_max: minimal latitude derived from wikipedia "northernmost point"
+  # long_min: minimal longitude derived from wikipedia "westernmost point"
+  # long_max: maximal longitude derived from wikipedia "easternmost point"
+
+
+func_map <- function(data, country, lat_min, lat_max, long_min, long_max) {
+  
+
+  # set coordinates outside the range to NA
+  #########################################
+  
+  # for latitude
+  data$latitude <- ifelse(
+    # if lat values are between min and max of map data...
+    between(data$latitude, 
+            lat_min,  # min lat of map data
+            lat_max), # max lat of map data
+    # ... then keep lat ...
+    data$latitude, 
+    # ... else set it missing
+    NA)
+  
+  data$longitude <- ifelse(
+    # if lat values are between min and max of map data...
+    between(data$long, 
+            long_min,  # min long of map data
+            long_max), # max long of map data
+    # ... then keep long ...
+    data$longitude, 
+    # ... else set it missing
+    NA)
+  
+  
+  # create plot
+  #############
+  
+  plot <- ggplot(data = data, mapping = aes(x = longitude, y = latitude)) +
+    # plot country map
+    geom_polygon(
+      aes(x = long, y = lat, group = group), data = map_data("world", region = country),
+      fill = "grey90",color = "black") +
+    coord_quickmap() +
+    # add white background
+    theme_void() +
+    # add title and caption
+    labs(title = paste("Event locations across", country), caption = "Source: ticketmaster.com") +
+    # change font and font size of title and caption
+    theme(title = element_text(size = 8, face = 'bold'),
+          plot.caption = element_text(face = "italic")) + 
+    # highlight venues with points
+    # adjust opacity to avoid overplotting and visualize areas with many venues
+    # darker than areas with less venues
+    geom_point(alpha = 0.2)
+  
+  
+  return(plot)
+  
+}
+```
