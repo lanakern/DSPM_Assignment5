@@ -223,14 +223,14 @@ for (i in 0:loop_pages) {
   j <- i + 1
   
   # calculate index to fill empty data frame
-  index <- ((j - 1) * 200 + 1):(200 * j)
+  index <- ((j - 1) * 20 + 1):(20 * j)
   
   # append data frame of each page to full data frame
   df_venues_all[index, ] <- df_venues_pagei
   
   # respect rate limit: 5 requests per second
-  
-  Sys.sleep(0.2)
+  # with Sys.sleep(0.2) and Sys.sleep(0.25), I got an error message
+  Sys.sleep(0.5)
   
 }
 ```
