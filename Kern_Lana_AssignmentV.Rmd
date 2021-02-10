@@ -360,6 +360,7 @@ plot <- ggplot(data = df_venues_final, mapping = aes(x = longitude, y = latitude
   labs(title = "Event locations across Germany", caption = "Source: ticketmaster.com") +
   # change font and font size of title and caption
   theme(title = element_text(size = 8, face = 'bold'),
+        plot.title = element_text(hjust = 0.5), 
         plot.caption = element_text(face = "italic")) +
   # highlight venues with points
   # adjust opacity to avoid overplotting and visualize areas with many venues
@@ -621,7 +622,8 @@ func_map <- function(data, country, lat_min, lat_max, long_min, long_max) {
     # add title and caption
     labs(title = paste("Event locations across", country), caption = "Source: ticketmaster.com") +
     # change font and font size of title and caption
-    theme(title = element_text(size = 8, face = 'bold'),
+    theme(title = element_text(size = 8, face = 'bold'), 
+          plot.title = element_text(hjust = 0.5),
           plot.caption = element_text(face = "italic")) + 
     # highlight venues with points
     # adjust opacity to avoid overplotting and visualize areas with many venues
