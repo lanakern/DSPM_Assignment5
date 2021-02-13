@@ -152,7 +152,7 @@ n
 
 # because the location element is missing in some requests, I figured out
 # that adjusting the size parameter in the GET() request solves this problem.
-size_200 <- 200
+size_200 <- 500
 
 # on how many full pages are the venues if on one page are 200 results
 full_pages <- as.numeric(floor(n/size_200))  # 61
@@ -242,7 +242,7 @@ for (i in 0:loop_pages) {
   # respect rate limit: 5 requests per second
   # with Sys.sleep(0.2) and Sys.sleep(0.25), I got a HTTP status code of 429
   # meaning that I made too many requests.
-  Sys.sleep(0.5)
+  Sys.sleep(2)
   
 }
 
@@ -254,11 +254,11 @@ for (i in 0:loop_pages) {
 resp_venues_ger_lastpage <-
   GET(url = "https://app.ticketmaster.com/discovery/v2/venues.json?",
       query = list(
-        countryCode = "DE",  # set countryCode as Germany
-        apikey = api_key,    # provide secret API key to successfully call API
-        page = i + 1,        # last page number after loop with not all entries
-        locale = "*" ,       # use * to match all locales
-        size = 200           # adjust number of entries per page
+        countryCode = "DE",           # set countryCode as Germany
+        apikey = api_key,             # provide secret API key to successfully call API
+        page = i + 1,                 # last page number after loop with not all entries
+        locale = "*" ,                # use * to match all locales
+        size = size_200               # adjust number of entries per page
       )
   )
 
@@ -284,13 +284,13 @@ if (is.null(content_venues_lastpage$`_embedded`$venues$location$longitude)) {
   )
 } else {
   df_venues_lastpage <- data.frame(
-    "name" = content_venues$`_embedded`$venues$name, 
-    "city" = content_venues$`_embedded`$venues$city$name, 
-    "postalCode" = content_venues$`_embedded`$venues$postalCode, 
-    "address" = content_venues$`_embedded`$venues$address$line1,
-    "url" = content_venues$`_embedded`$venues$url,
-    "longitude" = content_venues$`_embedded`$venues$location$longitude,
-    "latitude" = content_venues$`_embedded`$venues$location$latitude
+    "name" = content_venues_lastpage$`_embedded`$venues$name, 
+    "city" = content_venues_lastpage$`_embedded`$venues$city$name, 
+    "postalCode" = content_venues_lastpage$`_embedded`$venues$postalCode, 
+    "address" = content_venues_lastpage$`_embedded`$venues$address$line1,
+    "url" = content_venues_lastpage$`_embedded`$venues$url,
+    "longitude" = content_venues_lastpage$`_embedded`$venues$location$longitude,
+    "latitude" = content_venues_lastpage$`_embedded`$venues$location$latitude
   )
 }
 
