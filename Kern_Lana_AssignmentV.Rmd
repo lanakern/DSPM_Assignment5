@@ -635,6 +635,8 @@ func_map <- function(data, country, lat_min, lat_max, long_min, long_max) {
 ```
 
 
+\
+
 I create extract the venues data for Austria and create the map using my two functions:
 
 ```{r ex6_austria}
@@ -647,3 +649,20 @@ str(data_austria)
 # create map (extreme points are extracted from Wikipedia)
 func_map(data_austria, "Austria", 46.3725, 49.020556, 9.530833, 17.160556)
 ```
+
+
+\
+
+To show that my function works fine, I create a map for the Netherlands:
+
+```{r ex6_austria}
+# extract data
+data_netherlands <- func_venues("NL", 500, api_key)
+
+# show structure of data
+str(data_netherlands)
+
+# create map (extreme points are extracted from Wikipedia)
+func_map(data_netherlands, "Netherlands", 50.750417, 53.465556, 3.358333, 7.227778)
+```
+
