@@ -655,7 +655,7 @@ func_map(data_austria, "Austria", 46.3725, 49.020556, 9.530833, 17.160556)
 
 To show that my function works fine, I create a map for the Netherlands:
 
-```{r ex6_austria}
+```{r ex6_netherlands}
 # extract data
 data_netherlands <- func_venues("NL", 500, api_key)
 
