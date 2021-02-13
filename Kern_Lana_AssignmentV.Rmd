@@ -506,7 +506,7 @@ func_venues <- function(country, size, api_key) {
         query = list(
           countryCode = country,  # set countryCode according to input
           apikey = api_key,       # provide secret API key to successfully call API
-          page = i + 1,           # last page number after loop with not all entries
+          page = (i + 1),           # last page number after loop with not all entries
           locale = "*",           # use * to match all locales
           size = size
         )
