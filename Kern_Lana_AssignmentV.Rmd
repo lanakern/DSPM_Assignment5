@@ -345,7 +345,7 @@ df_venues_final$longitude <- ifelse(
 
 Lastly, I create the map:
 
-```{r ex5_map}
+```{r ex5_map, warning = F}
 ggplot(data = df_venues_final, mapping = aes(x = longitude, y = latitude)) +
   # plot country map
   geom_polygon(
@@ -639,7 +639,7 @@ func_map <- function(data, country, lat_min, lat_max, long_min, long_max) {
 
 I create extract the venues data for Austria and create the map using my two functions:
 
-```{r ex6_austria}
+```{r ex6_austria, warning = F}
 # extract data
 data_austria <- func_venues("AT", 200, api_key)
 
@@ -655,7 +655,7 @@ func_map(data_austria, "Austria", 46.3725, 49.020556, 9.530833, 17.160556)
 
 To show that my function works fine, I create a map for the Netherlands:
 
-```{r ex6_netherlands}
+```{r ex6_netherlands, warning = F}
 # extract data
 data_netherlands <- func_venues("NL", 500, api_key)
 
