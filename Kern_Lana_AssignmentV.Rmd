@@ -13,7 +13,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 
-I worked together with Michael Lyubkin (Student ID: 4168485), Martin Scheerer (Student ID: 5631373), Anton Höhl (Student ID: 5637078) and Jingwen Xu (Student ID: 5631584). 
+I worked together with Michael Lyubkin (Student ID: 4168485), Martin Scheerer (Student ID: 5631373), Anton Höhl (Student ID: 5637078), Jingwen Xu (Student ID: 5631584) and Simon Metzger (Student ID: 5635087). 
 I hereby assure that my submission is in line with the *Code of Conduct*  outlined on the lecture slides. 
 
 \
