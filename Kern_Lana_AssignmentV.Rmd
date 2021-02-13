@@ -154,12 +154,12 @@ n
 # that adjusting the size parameter in the GET() request solves this problem.
 size_200 <- 500
 
-# on how many full pages are the venues if on one page are 200 results
-full_pages <- as.numeric(floor(n/size_200))  # 61
+# on how many full pages are the venues if on one page are 500 results
+full_pages <- as.numeric(floor(n/size_200))  # 24
 full_pages
 
-# how many venues are on last page (page 62)?
-results_last_page <- n - (full_pages * size_200)  # 38
+# how many venues are on last page (page 25)?
+results_last_page <- n - (full_pages * size_200)  # 238
 results_last_page
 
 
