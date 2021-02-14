@@ -4,14 +4,15 @@ subtitle: 'Data Science Project Management | Winter Term 2020 / 2021'
 author: 'Submitted by Lana Kern (Student ID: 5395819)'
 date: 'February 16, 2021'
 output: 
-  html_document:
-  toc: true
+    html_document:
+      toc: true
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+\
 
 I worked together with Michael Lyubkin (Student ID: 4168485), Martin Scheerer (Student ID: 5631373), Anton Höhl (Student ID: 5637078), Jingwen Xu (Student ID: 5631584) and Simon Metzger (Student ID: 5635087). 
 I hereby assure that my submission is in line with the *Code of Conduct*  outlined on the lecture slides. 
@@ -46,8 +47,7 @@ library(ggplot2)  # to create the map
 ## Exercise 1: Setting up a new GitHub repository
 
 The link to my personal GitHub account where the project's version history is documented is:
-`https://github.com/lanakern/DSPM_Assignment5.git`
-
+<https://github.com/lanakern/DSPM_Assignment5.git> 
 
 \
 
@@ -61,7 +61,7 @@ The most important features and functionalities of the Ticketmaster *Discovery A
 
   + To find all venues the base URL for the `GET()` request is: `https://app.ticketmaster.com/discovery/v2/venues`. 
   
-  + This base URL can be expanded by for example specifying the country. 
+  + This base URL can be expanded by, for example, specifying the country. 
 
 * To run a successful API call, one needs to pass an API key in the `apikey` query parameter. My retrieved valid API key from the API Explorer is stored in a separate script called `api_key_ticketmaster.R` in order to comply to the common secrecy practices. The `api_key_ticketmaster.R` is also stored in the R project, but added to the `.gitignore` file so that it is not tracked by GIT. Most importantly, it does not appear in my public GitHub repository. 
 
@@ -77,15 +77,15 @@ The following packages are needed to interact with the APIs using R and already 
 
 * The `{httr}` package is a tidyverse package that is needed to implement the HTTP methods in R. It includes functions for the most important http verbs such as `GET()`.
 
-* The `{jsonlite}` package is needed in order to convert a JSON object into a R object by using the provided function `fromJSON()`. 
+* The `{jsonlite}` package is needed in order to convert a JSON object into an R object by using the provided function `fromJSON()`. 
 
 
 Next, a first `GET()` request is performed, that searches for event venues in Germany. The following URL is constructed by using the information from Exercise 2, the venue search of the ticketmaster API explorer (*https://developer.ticketmaster.com/api-explorer/v2/*) and the documentation of the venue search (*https://developer.ticketmaster.com/products-and-docs/apis/discovery-api/v2/#search-venues-v2*). 
 
 ```{r ex3_first_GET_request}
 # load API key into R and store it in R under the name api_key
-# if your structure of your api file is different, please store it here under my
-# name "api_key". It is often used in the code. 
+# if your structure of your api file is different, please store it here under the
+# name "api_key". This is necessary because the "api_key" is used multiple times in the code. 
 api_key <- source("api_key_ticketmaster.R")[[1]]
 
 # perform GET request
@@ -93,7 +93,7 @@ resp_venues_ger <-
   GET(url = "https://app.ticketmaster.com/discovery/v2/venues.json?",
       query = list(
         apikey = api_key,    # provide secret API key to successfully call API
-        countryCode = "DE",  # set countryCode as Germany
+        countryCode = "DE",  # set countryCode to Germany
         locale = "*"         # use * to match all locales
       )
   )
@@ -106,18 +106,25 @@ status_code(resp_venues_ger)  # = 200 -> success
 # returns a character vector containing the JSON object...
 content_venues_ger_json <- content(resp_venues_ger, as = "text")
 
-# ... then I convert the JSON object into a R object by using the fromJSON() function
+# ... then I convert the JSON object into an R object by using the fromJSON() function
 content_venues_ger <- fromJSON(content_venues_ger_json)
 ```
 
-The list element `content_venues_ger` consists of three elements: `_embedded`, `_links` and `page`. The list element `_embedded` contains a data frame called `venues` which contains the variables we are interested in. More precisely, the data frame `venues` contains 20 observations of 19 variables. 
-Of particular interest for this assignment is also the page element which contains information about the number of entries per page (stored in `size`), the number of total venues (stored in `totalElements`), the number of total Pages (stored in `totalPages`) and the current page number (stored in `number`). 
+The list element `content_venues_ger` consists of three elements: `_embedded`, `_links` and `page`. 
 
-Lastly, the `name`, the `city`, the `postalCode` and `address`, as well as the `url` and the `longitude` and `latitude` of the venues from the `venues` part in the list element `_embedded` is extracted to a data frame. 
+* The list element `_embedded` contains a data frame called `venues` which contains the variables we are interested in. More precisely, the data frame `venues` contains 20 observations of 19 variables. 
+
+* The `_links` element contains information about the URLs (stored as *href*) needed to perform a `GET()` request. The `self` element shows the URL that was used to perform the `GET()` request above. The `first` element shows the URL needed to extract the first 20 venues (yields same result as using the URL from `self` in this case). The `next` and `last` element shows the URL needed to extract the next 20 venues and the last 20 venues respectively. Additionally, from the URLs I learn that one can specify the `size` and `page` parameter in the query. 
+
+* Of particular interest for this assignment is also the page element which contains information about the number of entries per page (stored in `size`), the number of total venues (stored in `totalElements`), the number of total Pages (stored in `totalPages`) and the current page number (stored in `number`). 
+
+\
+
+Lastly, the `name`, the `city`, the `postalCode` and `address`, as well as the `url` and the `longitude` and `latitude` of the venues are extracted to a data frame. 
 
 ```{r ex3_dataframe}
 # the relevant information is stored in the venues part of the list element "_embedded"
-# i extract the information I need and create a data frame
+# variables of interest are extracted and stored in a data frame called df_venues
 df_venues <- data.frame(
   "name" = content_venues_ger$`_embedded`$venues$name, 
   "city" = content_venues_ger$`_embedded`$venues$city$name, 
@@ -144,32 +151,34 @@ I take a closer look at the list element named `page` and recognize that my `GET
 ```{r ex4_page_result}
 # how many results did my GET request yield?
 result_per_page <- as.numeric(content_venues_ger$page$size)  # 20
-result_per_page
+result_per_page 
 
 # how many results are there in total?
 n <- as.numeric(content_venues_ger$page$totalElements)  # 12238
 n
 
-# because the location element is missing in some requests, I figured out
-# that adjusting the size parameter in the GET() request solves this problem.
-size_200 <- 500
+# I adjust the size parameter, i.e. the results per page, because this
+# makes the for loop faster.
+size_param <- 500
 
 # on how many full pages are the venues if on one page are 500 results
-full_pages <- as.numeric(floor(n/size_200))  # 24
+full_pages <- as.numeric(floor(n/size_param))  # 24
 full_pages
 
 # how many venues are on last page (page 25)?
-results_last_page <- n - (full_pages * size_200)  # 238
+results_last_page <- n - (full_pages * size_param)  # 238
 results_last_page
 
 
 # for loop for full pages
 #########################
 
-# create empty data frame with right dimensions which is filled during loop 
-# number of rows are the results per page times the number of full pages
-n_rows <- size_200 * full_pages
+# calculate number of results from full pages
+n_rows <- size_param * full_pages  
 
+# create empty data frame with correct dimensions, i.e. number of rows are results 
+# from full pages
+# the data frame is filled during the loop 
 df_venues_all <- data.frame(
   "name" = character(n_rows), 
   "city" = character(n_rows), 
@@ -182,6 +191,8 @@ df_venues_all <- data.frame(
 
 # important for the loop: first page starts with 0. Thus, the number of pages
 # for the loop must be reduced by one. 
+# this can also be seen in the _links and _page element of the list `content_venues_ger`:
+# URL for last page equals 611 but number of total pages is 612
 loop_pages <- full_pages - 1 
 
 for (i in 0:loop_pages) {
@@ -194,7 +205,7 @@ for (i in 0:loop_pages) {
           apikey = api_key,    # provide secret API key to successfully call API
           page = i,            # page number
           locale = "*",        # use * to match all locales
-          size = size_200      # adjust results per page
+          size = size_param    # adjust results per page
         )
     )
   
@@ -206,8 +217,8 @@ for (i in 0:loop_pages) {
   content_venues <- fromJSON(content_json_pagei)
   
   # create data frame for each page
-  # sometimes location element is missing 
-  # then missings for longitude  and latitude 
+  # sometimes location element is missing. In this case, I set values of 
+  # longitude  and latitude to NA
   if (is.null(content_venues$`_embedded`$venues$location$longitude)) {
     df_venues_pagei <- data.frame(
       "name" = content_venues$`_embedded`$venues$name, 
@@ -215,8 +226,8 @@ for (i in 0:loop_pages) {
       "postalCode" = content_venues$`_embedded`$venues$postalCode, 
       "address" = content_venues$`_embedded`$venues$address$line1,
       "url" = content_venues$`_embedded`$venues$url,
-      "longitude" = rep(NA, size_200),
-      "latitude" = rep(NA, size_200)
+      "longitude" = rep(NA, size_param),
+      "latitude" = rep(NA, size_param)
     )
   } else {
     df_venues_pagei <- data.frame(
@@ -234,14 +245,16 @@ for (i in 0:loop_pages) {
   j <- i + 1
   
   # calculate index to fill empty data frame
-  index <- ((j - 1) * size_200 + 1):(size_200 * j)
+  index <- ((j - 1) * size_param + 1):(size_param * j)
   
   # append data frame of each page to full data frame
   df_venues_all[index, ] <- df_venues_pagei
   
   # respect rate limit: 5 requests per second
-  # with Sys.sleep(0.2) and Sys.sleep(0.25), I got a HTTP status code of 429
-  # meaning that I made too many requests.
+  # according to the lecture this would be using Sys.sleep(0.2)
+  # I don't know why, but using this rate limit my code did not work.
+  # I always received a HTTP status code of 429 meaning that I made too many requests.
+  # Thus, I use a more conservative rate limit of 2 seconds between each request
   Sys.sleep(2)
   
 }
@@ -250,7 +263,7 @@ for (i in 0:loop_pages) {
 # add entries from last page to data frame 
 ##########################################
 
-# perform GET request for each page
+# perform GET request for last page
 resp_venues_ger_lastpage <-
   GET(url = "https://app.ticketmaster.com/discovery/v2/venues.json?",
       query = list(
@@ -258,7 +271,7 @@ resp_venues_ger_lastpage <-
         apikey = api_key,             # provide secret API key to successfully call API
         page = (i + 1),               # last page number after loop with not all entries
         locale = "*" ,                # use * to match all locales
-        size = size_200               # adjust number of entries per page
+        size = size_param             # adjust number of entries per page
       )
   )
 
@@ -322,44 +335,48 @@ Secondly, I set coordinate values to `NA` that lie way beyond the German borders
 # set coordinates outside the given range to NA
 # do this for latitude
 df_venues_final$latitude <- ifelse(
-  # if lat values are between min and max of map data...
+  # if latitude values are between the given range...
   between(df_venues_final$latitude, 
-          47.271679,  # min lat of map data
-          55.0846), # max lat of map data
-  # ... then keep lat ...
+          47.271679,  # min latitude
+          55.0846), # max latitude
+  # ... then keep them as they are ...
   df_venues_final$latitude, 
-  # ... else set it missing
+  # ... else set them to NA
   NA)
 
 # do this for longitude
 df_venues_final$longitude <- ifelse(
-  # if lat values are between min and max of map data...
-  between(df_venues_final$long, 
-          5.866944,  # min long of map data
-          15.043611), # max long of map data
-  # ... then keep long ...
+  # if longitude values are between the given range...
+  between(df_venues_final$longitude, 
+          5.866944,  # min longitude 
+          15.043611), # max longitude 
+  # ... then keep them as they are ...
   df_venues_final$longitude, 
-  # ... else set it missing
+  # ... else set them to NA
   NA)
 ```
+
+\
 
 Lastly, I create the map:
 
 ```{r ex5_map, warning = F}
+# visualizing the extract data by creating a map
 ggplot(data = df_venues_final, mapping = aes(x = longitude, y = latitude)) +
-  # plot country map
+  # plot map of germany
   geom_polygon(
     aes(x = long, y = lat, group = group), data = map_data("world", region = "Germany"),
     fill = "grey90",color = "black") +
+  # project a portion of the earth onto a flat 2D plane
   coord_quickmap() +
   # add white background
   theme_void() +
   # add title and caption
   labs(title = "Event locations across Germany", caption = "Source: ticketmaster.com") +
-  # change font and font size of title and caption
-  theme(title = element_text(size = 8, face = 'bold'),
-        plot.title = element_text(hjust = 0.5), 
-        plot.caption = element_text(face = "italic")) +
+  # make plot niced
+  theme(title = element_text(size = 8, face = 'bold'),  # change font size of title
+        plot.title = element_text(hjust = 0.5),  # title in the middle of the plot
+        plot.caption = element_text(face = "italic")) +  # change font of caption
   # highlight venues with points
   # adjust opacity to avoid overplotting and visualize areas with many venues
   # darker than areas with less venues
@@ -372,7 +389,7 @@ ggplot(data = df_venues_final, mapping = aes(x = longitude, y = latitude)) +
 
 ## Exercise 6: Event locations in other countries
 
-To repeat the analysis for another European country, I put the code for exercise 3 to 5 into a function called `func_venues()` and the code for the map inside a function alled `func_map_venues()`. 
+To repeat the analysis for another European country, I put the code for exercise 3 and 4 into a function called `func_venues()` and the code for the map created in exercise 6 inside a function called `func_map_venues()`. 
 This is very efficient as I can change the choice of what European country I want to use very easy.
 
 ```{r function_venues_data, echo = F}
@@ -492,7 +509,10 @@ func_venues <- function(country, size, api_key) {
     df_venues_all[index, ] <- df_venues_pagei
     
     # respect rate limit: 5 requests per second
-    Sys.sleep(0.5)
+    # using Sys.sleep(0.2) the for loop stopped yielding the HTTP error 429
+    # meaning that I sent to much requests. Thus, I use a more conservative rate 
+    # limit of 2 seconds beteeen each request.
+    Sys.sleep(2)
     
   }
   
@@ -597,7 +617,7 @@ func_map <- function(data, country, lat_min, lat_max, long_min, long_max) {
   
   data$longitude <- ifelse(
     # if lat values are between min and max of map data...
-    between(data$long, 
+    between(data$longitude, 
             long_min,  # min long of map data
             long_max), # max long of map data
     # ... then keep long ...
@@ -614,6 +634,7 @@ func_map <- function(data, country, lat_min, lat_max, long_min, long_max) {
     geom_polygon(
       aes(x = long, y = lat, group = group), data = map_data("world", region = country),
       fill = "grey90",color = "black") +
+    # project a portion of the earth onto a flat 2D plane
     coord_quickmap() +
     # add white background
     theme_void() +
@@ -637,7 +658,7 @@ func_map <- function(data, country, lat_min, lat_max, long_min, long_max) {
 
 \
 
-I create extract the venues data for Austria and create the map using my two functions:
+I extract the venues data for Austria and create the map using my two functions.  
 
 ```{r ex6_austria, warning = F}
 # extract data
