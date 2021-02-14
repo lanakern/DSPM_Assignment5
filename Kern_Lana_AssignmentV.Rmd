@@ -254,8 +254,8 @@ for (i in 0:loop_pages) {
   # according to the lecture this would be using Sys.sleep(0.2)
   # I don't know why, but using this rate limit my code did not work.
   # I always received a HTTP status code of 429 meaning that I made too many requests.
-  # Thus, I use a more conservative rate limit of 2 seconds between each request
-  Sys.sleep(2)
+  # Thus, I use a more conservative rate limit of 5 seconds between each request
+  Sys.sleep(5)
   
 }
 
@@ -389,6 +389,8 @@ ggplot(data = df_venues_final, mapping = aes(x = longitude, y = latitude)) +
 
 ## Exercise 6: Event locations in other countries
 
+Repeating exercise 2 for another European country leads to the same results as above. The only thing, I additionally figured out is the country code in the venue search documentation. Moreover, in exercise 3, describing what I see in the list element after the first `GET()` request is identical to above. 
+
 To repeat the analysis for another European country, I put the code for exercise 3 and 4 into a function called `func_venues()` and the code for the map created in exercise 6 inside a function called `func_map_venues()`. 
 This is very efficient as I can change the choice of what European country I want to use very easy.
 
@@ -406,24 +408,47 @@ This is very efficient as I can change the choice of what European country I wan
 
 func_venues <- function(country, size, api_key) {
   
+  #############
+  # Exercise 3
+  ############
+  
   # get data for page 0
   #####################
   
+  # perform GET request
   resp_venues_page0 <-
     GET(url = "https://app.ticketmaster.com/discovery/v2/venues.json?",
         query = list(
-          countryCode = country,  # country code as defined in function
           apikey = api_key,       # provide secret API key to successfully call API
+          countryCode = country,  # country code as defined in function
           locale = "*"            # use * to match all locales
         )
     )
   
+  # function displays a warning if GET() request fails
+  stop_for_status(resp_venues_page0)
   
   # extract content from response object
   content_json_page0 <- content(resp_venues_page0, as = "text")
   
   # convert JSON object in R object
   content_venues_page0 <- fromJSON(content_json_page0)
+  
+  # create data frame with results from first page
+  df_venues_firstpage <- data.frame(
+  "name" = content_venues_page0$`_embedded`$venues$name, 
+  "city" = content_venues_page0$`_embedded`$venues$city$name, 
+  "postalCode" = content_venues_page0$`_embedded`$venues$postalCode, 
+  "address" = content_venues_page0$`_embedded`$venues$address$line1,
+  "url" = content_venues_page0$`_embedded`$venues$url,
+  "longitude" = content_venues_page0$`_embedded`$venues$location$longitude,
+  "latitude" = content_venues_page0$`_embedded`$venues$location$latitude
+  )
+  
+  
+  ############
+  # Exercise 4
+  ############
   
   # how many results are there in total?
   n <- as.numeric(content_venues_page0$page$totalElements)  
@@ -453,68 +478,68 @@ func_venues <- function(country, size, api_key) {
   ##########
   
   for (i in 0:loop_pages) {
-    
-    # perform GET request for each page
-    resp_venues_pagei <-
-      GET(url = "https://app.ticketmaster.com/discovery/v2/venues.json?",
-          query = list(
-            countryCode = country,  # country code as defined in function
-            apikey = api_key,       # provide secret API key to successfully call API
-            page = i,               # page number
-            locale = "*" ,          # use * to match all locales
-            size = size             # adjust number of entries per page
-          )
-      )
-    
-    
-    # extract content from response object
-    content_json_pagei <- content(resp_venues_pagei, as = "text")
-    
-    # convert JSON object in R object
-    content_venues <- fromJSON(content_json_pagei)
-    
-    # create data frame for each page
-    # sometimes location element is missing 
-    # then missings for longitude  and latitude 
-    if (is.null(content_venues$`_embedded`$venues$location$longitude)) {
-      df_venues_pagei <- data.frame(
-        "name" = content_venues$`_embedded`$venues$name, 
-        "city" = content_venues$`_embedded`$venues$city$name, 
-        "postalCode" = content_venues$`_embedded`$venues$postalCode, 
-        "address" = content_venues$`_embedded`$venues$address$line1,
-        "url" = content_venues$`_embedded`$venues$url,
-        "longitude" = rep(NA, size),
-        "latitude" = rep(NA, size)
-      )
-    } else {
-      df_venues_pagei <- data.frame(
-        "name" = content_venues$`_embedded`$venues$name, 
-        "city" = content_venues$`_embedded`$venues$city$name, 
-        "postalCode" = content_venues$`_embedded`$venues$postalCode, 
-        "address" = content_venues$`_embedded`$venues$address$line1,
-        "url" = content_venues$`_embedded`$venues$url,
-        "longitude" = content_venues$`_embedded`$venues$location$longitude,
-        "latitude" = content_venues$`_embedded`$venues$location$latitude
-      )
-    }
-    
-    
-    # create index 
-    j <- i + 1
-    
-    # calculate index to fill empty data frame
-    index <- ((j - 1) * size + 1):(size * j)
-    
-    # append data frame of each page to full data frame
-    df_venues_all[index, ] <- df_venues_pagei
-    
-    # respect rate limit: 5 requests per second
-    # using Sys.sleep(0.2) the for loop stopped yielding the HTTP error 429
-    # meaning that I sent to much requests. Thus, I use a more conservative rate 
-    # limit of 2 seconds beteeen each request.
-    Sys.sleep(2)
-    
+  
+  # perform GET request for each page
+  resp_venues_pagei <-
+    GET(url = "https://app.ticketmaster.com/discovery/v2/venues.json?",
+        query = list(
+          countryCode = country,  # set countryCode as Germany
+          apikey = api_key,       # provide secret API key to successfully call API
+          page = i,               # page number
+          locale = "*",           # use * to match all locales
+          size = size             # adjust results per page
+        )
+    )
+  
+  
+  # extract content from response object
+  content_json_pagei <- content(resp_venues_pagei, as = "text")
+  
+  # convert JSON object in R object
+  content_venues <- fromJSON(content_json_pagei)
+  
+  # create data frame for each page
+  # sometimes location element is missing. In this case, I set values of 
+  # longitude  and latitude to NA
+  if (is.null(content_venues$`_embedded`$venues$location$longitude)) {
+    df_venues_pagei <- data.frame(
+      "name" = content_venues$`_embedded`$venues$name, 
+      "city" = content_venues$`_embedded`$venues$city$name, 
+      "postalCode" = content_venues$`_embedded`$venues$postalCode, 
+      "address" = content_venues$`_embedded`$venues$address$line1,
+      "url" = content_venues$`_embedded`$venues$url,
+      "longitude" = rep(NA, size),
+      "latitude" = rep(NA, size)
+    )
+  } else {
+    df_venues_pagei <- data.frame(
+      "name" = content_venues$`_embedded`$venues$name, 
+      "city" = content_venues$`_embedded`$venues$city$name, 
+      "postalCode" = content_venues$`_embedded`$venues$postalCode, 
+      "address" = content_venues$`_embedded`$venues$address$line1,
+      "url" = content_venues$`_embedded`$venues$url,
+      "longitude" = content_venues$`_embedded`$venues$location$longitude,
+      "latitude" = content_venues$`_embedded`$venues$location$latitude
+    )
   }
+
+  # create index 
+  j <- i + 1
+  
+  # calculate index to fill empty data frame
+  index <- ((j - 1) * size + 1):(size * j)
+  
+  # append data frame of each page to full data frame
+  df_venues_all[index, ] <- df_venues_pagei
+  
+  # respect rate limit: 5 requests per second
+  # according to the lecture this would be using Sys.sleep(0.2)
+  # I don't know why, but using this rate limit my code did not work.
+  # I always received a HTTP status code of 429 meaning that I made too many requests.
+  # Thus, I use a more conservative rate limit of 2 seconds between each request
+  Sys.sleep(5)
+  
+}
   
   
   # add entries from last page to data frame 
@@ -576,10 +601,10 @@ func_venues <- function(country, size, api_key) {
   df_venues_final[, c("longitude", "latitude")] <- apply(df_venues_final[, c("longitude", "latitude")],
                                                          MARGIN = 2,
                                                          as.numeric)
-  # return final data frame as function output
-  ############################################
+  # results from exercise 3 and 4
+  ###############################
   
-  return(df_venues_final)
+  return(list(df_venues_firstpage, df_venues_final))
 }
 
 
@@ -656,19 +681,25 @@ func_map <- function(data, country, lat_min, lat_max, long_min, long_max) {
 ```
 
 
+
 \
 
 I extract the venues data for Austria and create the map using my two functions.  
 
 ```{r ex6_austria, warning = F}
 # extract data
-data_austria <- func_venues("AT", 200, api_key)
+df_austria_list <- func_venues("AT", 200, api_key)
 
-# show structure of data
-str(data_austria)
+# show structure of first page results (exercise 3)
+df_austria_ex3 <- df_austria_list[[1]]
+str(df_austria_ex3)
+
+# show structure of data frame with all event venues in Austria (exercise 4)
+df_austria_ex4 <- df_austria_list[[2]]
+str(df_austria_ex4)
 
 # create map (extreme points are extracted from Wikipedia)
-func_map(data_austria, "Austria", 46.3725, 49.020556, 9.530833, 17.160556)
+func_map(df_austria_ex4, "Austria", 46.3725, 49.020556, 9.530833, 17.160556)
 ```
 
 
@@ -678,12 +709,17 @@ To show that my function works fine, I create a map for the Netherlands:
 
 ```{r ex6_netherlands, warning = F}
 # extract data
-data_netherlands <- func_venues("NL", 500, api_key)
+df_netherlands_list <- func_venues("NL", 500, api_key)
 
-# show structure of data
-str(data_netherlands)
+# show structure of first page results (exercise 3)
+df_netherlands_ex3 <- df_netherlands_list[[1]]
+str(df_netherlands_ex3)
+
+# show structure of dataa frame with all event venues in the Netherlands (exercise 4)
+df_netherlands_ex4 <- df_netherlands_list[[2]]
+str(df_netherlands_ex4)
 
 # create map (extreme points are extracted from Wikipedia)
-func_map(data_netherlands, "Netherlands", 50.750417, 53.465556, 3.358333, 7.227778)
+func_map(df_netherlands_ex4, "Netherlands", 50.750417, 53.465556, 3.358333, 7.227778)
 ```
 
